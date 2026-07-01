@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import { Calculator } from "lucide-react"
 import { calculateNtRisk, formatRiskRatio } from "@/lib/data"
+import { toFaNumber } from "@/lib/format"
 import { RiskBadge } from "./risk-badge"
 
 export function NtRiskModule({
@@ -23,63 +24,79 @@ export function NtRiskModule({
   ]
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-accent text-accent-foreground">
-            <Calculator className="size-4.5" aria-hidden="true" />
+    <div
+      dir="rtl"
+      className="rounded-xl border border-border bg-card p-5 shadow-sm"
+    >
+      <div className="mb-5 flex items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+            <Calculator className="size-5" aria-hidden="true" />
           </div>
+
           <div>
             <h3 className="text-sm font-semibold text-foreground">
-            ریسک سه‌ماهه اول
+              ریسک سه‌ماهه اول
             </h3>
-            <p className="text-xs text-muted-foreground">برآورد غربالگری ترکیبی</p>
+            <p className="text-sm text-muted-foreground">
+              برآورد غربالگری ترکیبی
+            </p>
           </div>
         </div>
-        <RiskBadge level={result.risk} />
+
+        <RiskBadge level={result.risk} className="shrink-0" />
       </div>
 
-      <div className="mt-5">
-        <div className="flex items-end justify-between">
-          <label htmlFor="nt-input" className="text-sm font-medium text-foreground">
-            Nuchal translucency
+      <div className="mb-5">
+        <div className="flex items-center justify-between gap-4">
+          <label
+            htmlFor="nt-slider"
+            className="text-sm font-semibold text-foreground"
+          >
+            ضخامت NT
           </label>
-          <span className="font-mono text-sm font-semibold text-foreground">
-            {nt.toFixed(1)} میلی‌متر
+
+          <span className="text-sm font-semibold text-foreground">
+            {toFaNumber(nt.toFixed(1))} میلی‌متر
           </span>
         </div>
+
         <input
-          id="nt-input"
+          id="nt-slider"
           type="range"
-          min={0.8}
-          max={6}
-          step={0.1}
+          min="0.8"
+          max="6"
+          step="0.1"
           value={nt}
           onChange={(e) => setNt(Number(e.target.value))}
           className="mt-2 w-full accent-[var(--primary)]"
+          dir="ltr"
         />
-        <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+
+        <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
           <span>۰.۸ میلی‌متر</span>
           <span>۶.۰ میلی‌متر</span>
         </div>
       </div>
 
-      <dl className="mt-5 space-y-2">
+      <div className="space-y-2">
         {rows.map((r) => (
           <div
             key={r.label}
-            className="flex items-center justify-between rounded-lg bg-muted px-3 py-2.5"
+            className="flex items-center justify-between rounded-lg bg-muted px-3 py-2"
           >
-            <dt className="text-sm text-muted-foreground">{r.label}</dt>
-            <dd className="font-mono text-sm font-semibold text-foreground">
+            <span className="text-sm text-muted-foreground">{r.label}</span>
+            <span className="font-semibold text-foreground">
               {formatRiskRatio(r.value)}
-            </dd>
+            </span>
           </div>
         ))}
-      </dl>
+      </div>
 
       <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-      این مدل فقط برای نسخه نمایشی است. با تغییر مقدار NT، ریسک تخمینی به‌صورت زنده محاسبه می‌شود و برای تصمیم‌گیری واقعی درمانی قابل استفاده نیست.
+        این مدل فقط برای نسخه نمایشی است. با تغییر مقدار NT، ریسک تخمینی
+        به‌صورت زنده محاسبه می‌شود و برای تصمیم‌گیری واقعی درمانی قابل استفاده
+        نیست.
       </p>
     </div>
   )

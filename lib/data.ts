@@ -9,7 +9,7 @@ import type { BiometricKey, Doctor, Patient } from "./types"
 export const DOCTORS: Doctor[] = [
   {
     id: "D-001",
-    name: "دکتر محمد علایی",
+    name: "دکتر مهدیه علایی",
     specialty: "زنان و زایمان",
     email: "admin@fandogh.demo",
     password: "admin123",
@@ -17,7 +17,7 @@ export const DOCTORS: Doctor[] = [
   },
   {
     id: "D-002",
-    name: "دکتر هومان شاهچراغی",
+    name: "دکتر لاله شاهچراغی",
     specialty: "سونوگرافی زنان و بارداری",
     email: "chen@fandogh.demo",
     password: "doctor123",
