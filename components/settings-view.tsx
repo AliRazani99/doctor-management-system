@@ -17,12 +17,14 @@ function Toggle({
   defaultOn?: boolean
 }) {
   const [on, setOn] = useState(defaultOn)
+
   return (
     <div className="flex items-center justify-between gap-4 py-3.5">
-      <div>
+      <div className="text-right">
         <p className="text-sm font-medium text-foreground">{label}</p>
         <p className="text-sm text-muted-foreground">{description}</p>
       </div>
+
       <button
         type="button"
         role="switch"
@@ -49,56 +51,74 @@ export function SettingsView() {
   const toast = useToast()
 
   return (
-    <div>
-      <PageHeader title="Settings" subtitle="Clinic profile and application preferences" />
+    <div dir="rtl">
+      <PageHeader
+        title="تنظیمات"
+        subtitle="مشخصات مرکز درمانی و ترجیحات سامانه"
+      />
+
       <div className="mx-auto max-w-3xl space-y-6 px-6 py-6">
         <Card>
           <div className="border-b border-border px-5 py-3">
-            <h2 className="text-sm font-semibold text-foreground">Clinic profile</h2>
+            <h2 className="text-sm font-semibold text-foreground">
+              مشخصات مرکز درمانی
+            </h2>
           </div>
+
           <CardContent className="grid gap-4 p-5 sm:grid-cols-2">
-            <Field label="Clinic name" value="Astraia Fetal Medicine Centre" />
-            <Field label="Lead clinician" value="Dr Reyes" />
-            <Field label="Department" value="Maternal-Fetal Medicine" />
-            <Field label="Timezone" value="GMT+01:00 (CET)" />
+            <Field label="نام مرکز" value="مرکز درمانی فندق" />
+            <Field label="پزشک مسئول" value="دکتر مهدیه علایی" />
+            <Field label="بخش" value="زنان و زایمان" />
+            <Field label="منطقه زمانی" value="GMT+01:00 (CET)" ltr />
           </CardContent>
         </Card>
 
         <Card>
           <div className="border-b border-border px-5 py-3">
-            <h2 className="text-sm font-semibold text-foreground">Preferences</h2>
+            <h2 className="text-sm font-semibold text-foreground">
+              ترجیحات سامانه
+            </h2>
           </div>
+
           <CardContent className="divide-y divide-border p-5 py-1">
             <Toggle
-              label="High-risk alerts"
-              description="Notify me when a visit is flagged high risk"
+              label="هشدار بیماران پرخطر"
+              description="در صورت ثبت ویزیت پرخطر، هشدار نمایش داده شود"
               defaultOn
             />
+
             <Toggle
-              label="Growth curve overlays"
-              description="Show 5th/50th/95th centiles on all charts"
+              label="نمایش نمودارهای رشد"
+              description="صدک‌های ۵، ۵۰ و ۹۵ در نمودارهای رشد نمایش داده شوند"
               defaultOn
             />
+
             <Toggle
-              label="Auto-draft notes"
-              description="Pre-fill visit notes from previous findings"
+              label="پیشنهاد خودکار یادداشت"
+              description="یادداشت ویزیت بر اساس یافته‌های قبلی بیمار پیشنهاد شود"
             />
           </CardContent>
         </Card>
 
         <Card>
           <div className="border-b border-border px-5 py-3">
-            <h2 className="text-sm font-semibold text-foreground">Reference standard</h2>
+            <h2 className="text-sm font-semibold text-foreground">
+              استاندارد مرجع
+            </h2>
           </div>
+
           <CardContent className="p-5">
-            <p className="text-sm text-muted-foreground">
-              Biometric measurements are compared against the selected fetal growth
-              reference. This is a demonstration build and is not for clinical use.
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              اندازه‌گیری‌های بیومتریک با استاندارد مرجع انتخاب‌شده برای رشد
+              جنین مقایسه می‌شوند. این نسخه صرفاً نمایشی است و نباید برای
+              تصمیم‌گیری واقعی درمانی استفاده شود.
             </p>
-            <div className="mt-4 flex items-center justify-between">
-              <Field label="Active reference" value="INTERGROWTH-21st (demo)" />
-              <Button size="lg" onClick={() => toast("Preferences saved")}>
-                Save changes
+
+            <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <Field label="مرجع فعال" value="INTERGROWTH-21st نسخه نمایشی" />
+
+              <Button size="lg" onClick={() => toast("تنظیمات ذخیره شد")}>
+                ذخیره تغییرات
               </Button>
             </div>
           </CardContent>
@@ -108,11 +128,27 @@ export function SettingsView() {
   )
 }
 
-function Field({ label, value }: { label: string; value: string }) {
+function Field({
+  label,
+  value,
+  ltr = false,
+}: {
+  label: string
+  value: string
+  ltr?: boolean
+}) {
   return (
-    <div>
+    <div className="text-right">
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="text-sm font-medium text-foreground">{value}</p>
+      <p
+        dir={ltr ? "ltr" : "rtl"}
+        className={cn(
+          "text-sm font-medium text-foreground",
+          ltr && "text-right",
+        )}
+      >
+        {value}
+      </p>
     </div>
   )
 }

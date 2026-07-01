@@ -10,7 +10,7 @@ import { useStore, type NewVisitInput } from "./store"
 import { useToast } from "./toast"
 
 const METRIC_ORDER: BiometricKey[] = ["hc", "ac", "fl", "efw"]
-const RISKS: RiskLevel[] = ["low", "medium", "high"]
+const RISKS: RiskLevel[] = ["پایین", "متوسط", "بالا"]
 
 /** Rough percentile estimate of a measured value vs the reference median. */
 function estimatePercentile(measured: number, median: number): number {

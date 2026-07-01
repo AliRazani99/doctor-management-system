@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ArrowLeft, Plus } from "lucide-react"
+import { ArrowRight, Plus } from "lucide-react"
 import { formatDate, ga, toFaNumber } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -10,11 +10,33 @@ import { VisitPanel } from "./visit-panel"
 import { NewVisitDialog } from "./new-visit-dialog"
 import { useStore } from "./store"
 
+function riskLabel(level: string): string {
+  switch (level) {
+    case "low":
+      return "کم‌خطر"
+    case "medium":
+      return "ریسک متوسط"
+    case "high":
+      return "پرخطر"
+    default:
+      return level
+  }
+}
 
-const RISK_LABELS = {
-  low: "کم‌خطر",
-  medium: "ریسک متوسط",
-  high: "پرخطر",
+type SummaryItem = {
+  label: string
+  value: string
+  mono?: boolean
+  ltr?: boolean
+}
+
+function patientInitials(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
 }
 
 export function PatientRecord({
@@ -26,13 +48,18 @@ export function PatientRecord({
 }) {
   const { patients } = useStore()
   const patient = patients.find((p) => p.id === patientId)
+
   const [activeVisitId, setActiveVisitId] = useState(
     patient?.visits[patient.visits.length - 1]?.id ?? "",
   )
   const [dialogOpen, setDialogOpen] = useState(false)
 
   if (!patient) {
-    return <div className="p-6 text-sm text-muted-foreground">Patient not found.</div>
+    return (
+      <div dir="rtl" className="p-6 text-sm text-muted-foreground">
+        بیمار مورد نظر پیدا نشد.
+      </div>
+    )
   }
 
   const activeVisit =
@@ -40,20 +67,30 @@ export function PatientRecord({
     patient.visits[patient.visits.length - 1] ??
     patient.visits[0]
 
-    const summary = [
-      { label: "سن", value: `${toFaNumber(patient.age)} سال` },
-      { label: "شناسه بیمار", value: patient.id, mono: true, ltr: true },
-      { label: "سن بارداری", value: ga(patient.gaWeeks, patient.gaDays) },
-      { label: "تاریخ زایمان", value: formatDate(patient.dueDate) },
-      {
-        label: "بارداری / زایمان",
-        value: `بارداری ${toFaNumber(patient.gravida)} / زایمان ${toFaNumber(patient.para)}`,
-      },
-      { label: "گروه خونی", value: patient.bloodType, ltr: true },
-    ]
+  if (!activeVisit) {
+    return (
+      <div dir="rtl" className="p-6 text-sm text-muted-foreground">
+        برای این بیمار هنوز ویزیتی ثبت نشده است.
+      </div>
+    )
+  }
+
+  const summary: SummaryItem[] = [
+    { label: "سن", value: `${toFaNumber(patient.age)} سال` },
+    { label: "شناسه بیمار", value: patient.id, mono: true, ltr: true },
+    { label: "سن بارداری", value: ga(patient.gaWeeks, patient.gaDays) },
+    { label: "تاریخ زایمان", value: formatDate(patient.dueDate) },
+    {
+      label: "بارداری / زایمان",
+      value: `بارداری ${toFaNumber(patient.gravida)} / زایمان ${toFaNumber(
+        patient.para,
+      )}`,
+    },
+    { label: "گروه خونی", value: patient.bloodType, ltr: true },
+  ]
 
   return (
-    <div>
+    <div dir="rtl">
       <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur">
         <div className="mx-auto max-w-7xl px-6 py-4">
           <button
@@ -61,29 +98,33 @@ export function PatientRecord({
             onClick={onBack}
             className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
-            <ArrowLeft className="size-4" aria-hidden="true" />
+            <ArrowRight className="size-4" aria-hidden="true" />
             بازگشت به بیماران
           </button>
+
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex items-center gap-4">
               <span className="flex size-14 items-center justify-center rounded-full bg-secondary text-base font-semibold text-secondary-foreground">
-                {patient.name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
+                {patientInitials(patient.name)}
               </span>
+
               <div>
                 <h1 className="text-xl font-semibold tracking-tight text-foreground">
                   {patient.name}
                 </h1>
+
                 <p className="text-sm text-muted-foreground">
-                نوبت بعدی {formatDate(patient.nextAppointment)}
+                  نوبت بعدی: {formatDate(patient.nextAppointment)}
                 </p>
               </div>
             </div>
+
             <div className="flex items-center gap-3">
-              <RiskBadge
-                level={patient.risk}
-                className="px-3 py-1 text-sm"
-                label={`Overall: ${patient.risk} risk`}
-              />
+            <RiskBadge
+              level={patient.risk}
+              label={`ریسک کلی: ${riskLabel(patient.risk)}`}
+            />
+
               <Button size="lg" onClick={() => setDialogOpen(true)}>
                 <Plus className="size-4" aria-hidden="true" />
                 ویزیت جدید
@@ -110,12 +151,15 @@ export function PatientRecord({
       </header>
 
       <div className="mx-auto max-w-7xl px-6 py-6">
-        {/* خط زمانی ویزیت ها */}
         <div className="mb-6">
-          <h2 className="mb-3 text-sm font-semibold text-foreground">خط زمانی ویزیت ها</h2>
+          <h2 className="mb-3 text-sm font-semibold text-foreground">
+            خط زمانی ویزیت‌ها
+          </h2>
+
           <div className="flex items-stretch gap-2 overflow-x-auto pb-2">
-            {patient.visits.map((visit, i) => {
+            {patient.visits.map((visit, index) => {
               const active = visit.id === activeVisit.id
+
               return (
                 <div key={visit.id} className="flex items-stretch">
                   <button
@@ -123,13 +167,13 @@ export function PatientRecord({
                     onClick={() => setActiveVisitId(visit.id)}
                     aria-current={active ? "step" : undefined}
                     className={cn(
-                      "flex min-w-44 flex-col gap-1 rounded-xl border px-4 py-3 text-left transition-colors",
+                      "flex min-w-44 flex-col gap-1 rounded-xl border px-4 py-3 text-right transition-colors",
                       active
                         ? "border-primary bg-primary/5 ring-1 ring-primary"
                         : "border-border bg-card hover:bg-muted/60",
                     )}
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-3">
                       <span
                         className={cn(
                           "text-xs font-semibold",
@@ -138,16 +182,24 @@ export function PatientRecord({
                       >
                         ویزیت {toFaNumber(visit.number)}
                       </span>
-                      <RiskBadge level={visit.risk} withDot={false} label={visit.risk} />
+
+                      <RiskBadge
+                        level={visit.risk}
+                        withDot={false}
+                        label={riskLabel(visit.risk)}
+                      />
                     </div>
+
                     <span className="text-sm font-semibold text-foreground">
                       {ga(visit.gaWeeks, visit.gaDays)}
                     </span>
+
                     <span className="text-xs text-muted-foreground">
                       {formatDate(visit.date)}
                     </span>
                   </button>
-                  {i < patient.visits.length - 1 && (
+
+                  {index < patient.visits.length - 1 && (
                     <div className="flex items-center px-1" aria-hidden="true">
                       <div className="h-px w-3 bg-border" />
                     </div>
@@ -158,7 +210,6 @@ export function PatientRecord({
           </div>
         </div>
 
-        {/* Active visit content (remounts per visit to reset local state) */}
         <VisitPanel
           key={activeVisit.id}
           patientId={patient.id}

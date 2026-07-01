@@ -1,4 +1,4 @@
-export type RiskLevel = "low" | "medium" | "high"
+export type RiskLevel = "پایین" | "متوسط" | "بالا"
 
 export type BiometricKey = "hc" | "ac" | "fl" | "efw"
 
