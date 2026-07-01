@@ -17,9 +17,9 @@ export function NtRiskModule({
   const result = useMemo(() => calculateNtRisk(nt, age), [nt, age])
 
   const rows = [
-    { label: "Trisomy 21", value: result.t21 },
-    { label: "Trisomy 18", value: result.t18 },
-    { label: "Trisomy 13", value: result.t13 },
+    { label: "تریزومی ۲۱", value: result.t21 },
+    { label: "تریزومی ۱۸", value: result.t18 },
+    { label: "تریزومی ۱۳", value: result.t13 },
   ]
 
   return (
@@ -31,9 +31,9 @@ export function NtRiskModule({
           </div>
           <div>
             <h3 className="text-sm font-semibold text-foreground">
-              First-trimester risk
+            ریسک سه‌ماهه اول
             </h3>
-            <p className="text-xs text-muted-foreground">Combined screening estimate</p>
+            <p className="text-xs text-muted-foreground">برآورد غربالگری ترکیبی</p>
           </div>
         </div>
         <RiskBadge level={result.risk} />
@@ -45,7 +45,7 @@ export function NtRiskModule({
             Nuchal translucency
           </label>
           <span className="font-mono text-sm font-semibold text-foreground">
-            {nt.toFixed(1)} mm
+            {nt.toFixed(1)} میلی‌متر
           </span>
         </div>
         <input
@@ -59,8 +59,8 @@ export function NtRiskModule({
           className="mt-2 w-full accent-[var(--primary)]"
         />
         <div className="mt-1 flex justify-between text-xs text-muted-foreground">
-          <span>0.8 mm</span>
-          <span>6.0 mm</span>
+          <span>۰.۸ میلی‌متر</span>
+          <span>۶.۰ میلی‌متر</span>
         </div>
       </div>
 
@@ -79,8 +79,7 @@ export function NtRiskModule({
       </dl>
 
       <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-        Demonstration model only — adjust the NT slider to see the estimated risk
-        recalculate live. Not for clinical use.
+      این مدل فقط برای نسخه نمایشی است. با تغییر مقدار NT، ریسک تخمینی به‌صورت زنده محاسبه می‌شود و برای تصمیم‌گیری واقعی درمانی قابل استفاده نیست.
       </p>
     </div>
   )

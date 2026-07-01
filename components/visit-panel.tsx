@@ -5,7 +5,7 @@ import Image from "next/image"
 import { FileText, Save, Stethoscope, UserRound } from "lucide-react"
 import { BIOMETRIC_META, referenceMedian } from "@/lib/data"
 import type { BiometricKey, Visit } from "@/lib/types"
-import { formatDate, ga } from "@/lib/format"
+import { formatDate, ga, toFaNumber } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -41,7 +41,7 @@ export function VisitPanel({
   function save() {
     updateVisitNote(patientId, visit.id, note)
     setSaved(true)
-    toast(`Note saved for Visit ${visit.number}`)
+    toast(`یادداشت ویزیت ${visit.number} ذخیره شد`)
   }
 
   const active = visit.biometrics[metric]
@@ -52,7 +52,7 @@ export function VisitPanel({
       <div className="space-y-6 lg:col-span-2">
         <Card className="overflow-hidden">
           <div className="flex items-center justify-between border-b border-border px-5 py-3">
-            <h3 className="text-sm font-semibold text-foreground">Ultrasound</h3>
+            <h3 className="text-sm font-semibold text-foreground">سونوگرافی</h3>
             <span className="text-xs text-muted-foreground">
               {ga(visit.gaWeeks, visit.gaDays)} · {formatDate(visit.date)}
             </span>
@@ -71,7 +71,7 @@ export function VisitPanel({
         <Card>
           <div className="flex items-center gap-2 border-b border-border px-5 py-3">
             <Stethoscope className="size-4 text-muted-foreground" aria-hidden="true" />
-            <h3 className="text-sm font-semibold text-foreground">Doppler findings</h3>
+            <h3 className="text-sm font-semibold text-foreground">یافته های داپلر</h3>
           </div>
           <CardContent className="space-y-2 p-5">
             {visit.doppler.map((d) => (
@@ -92,7 +92,7 @@ export function VisitPanel({
         </Card>
 
         <div className="rounded-xl border border-border bg-accent/40 p-5">
-          <h3 className="text-sm font-semibold text-foreground">Visit conclusion</h3>
+          <h3 className="text-sm font-semibold text-foreground">جمع‌بندی ویزیت</h3>
           <div className="mt-2 flex items-start gap-3">
             <RiskBadge level={visit.risk} />
             <p className="text-sm leading-relaxed text-foreground">{visit.conclusion}</p>
@@ -108,19 +108,19 @@ export function VisitPanel({
       <div className="space-y-6 lg:col-span-3">
         <Card>
           <div className="border-b border-border px-5 py-3">
-            <h3 className="text-sm font-semibold text-foreground">Biometric measurements</h3>
+            <h3 className="text-sm font-semibold text-foreground">اندازه گیری های بیومتریک</h3>
             <p className="text-xs text-muted-foreground">
-              Compared against the standard growth curve at {ga(visit.gaWeeks, visit.gaDays)}
+              مقایسه با منحنی استاندارد رشد در سن بارداری {ga(visit.gaWeeks, visit.gaDays)}
             </p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  <th className="px-5 py-2.5 font-medium">Measurement</th>
-                  <th className="px-5 py-2.5 font-medium">Value</th>
-                  <th className="px-5 py-2.5 font-medium">Median</th>
-                  <th className="px-5 py-2.5 font-medium">Centile</th>
+                  <th className="px-5 py-2.5 font-medium">اندازه گیری</th>
+                  <th className="px-5 py-2.5 font-medium">مقدار</th>
+                  <th className="px-5 py-2.5 font-medium">میانه</th>
+                  <th className="px-5 py-2.5 font-medium">صدک</th>
                 </tr>
               </thead>
               <tbody>
@@ -216,16 +216,16 @@ export function VisitPanel({
                 setSaved(false)
               }}
               rows={5}
-              aria-label={`Doctor's note for visit ${visit.number}`}
+              aria-label={`یادداشت پزشک · ویزیت {toFaNumber(visit.number)}`}
               className="w-full resize-y rounded-lg border border-input bg-card p-3 text-sm leading-relaxed text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
             <div className="mt-3 flex items-center justify-between">
               <span className="text-xs text-muted-foreground">
-                {saved ? "All changes saved" : "Unsaved changes"}
+                {saved ? "همه تغییرات ذخیره شده‌اند" : "تغییرات ذخیره نشده"}
               </span>
               <Button size="lg" onClick={save} disabled={saved}>
                 <Save className="size-4" aria-hidden="true" />
-                Save note
+                ذخیره یادداشت
               </Button>
             </div>
           </CardContent>

@@ -58,7 +58,7 @@ export function SettingsView() {
           </div>
           <CardContent className="grid gap-4 p-5 sm:grid-cols-2">
             <Field label="Clinic name" value="Astraia Fetal Medicine Centre" />
-            <Field label="Lead clinician" value="Dr. M. Reyes" />
+            <Field label="Lead clinician" value="Dr Reyes" />
             <Field label="Department" value="Maternal-Fetal Medicine" />
             <Field label="Timezone" value="GMT+01:00 (CET)" />
           </CardContent>

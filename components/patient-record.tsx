@@ -2,13 +2,20 @@
 
 import { useState } from "react"
 import { ArrowLeft, Plus } from "lucide-react"
-import { formatDate, ga } from "@/lib/format"
+import { formatDate, ga, toFaNumber } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { RiskBadge } from "./risk-badge"
 import { VisitPanel } from "./visit-panel"
 import { NewVisitDialog } from "./new-visit-dialog"
 import { useStore } from "./store"
+
+
+const RISK_LABELS = {
+  low: "کم‌خطر",
+  medium: "ریسک متوسط",
+  high: "پرخطر",
+}
 
 export function PatientRecord({
   patientId,
@@ -33,14 +40,17 @@ export function PatientRecord({
     patient.visits[patient.visits.length - 1] ??
     patient.visits[0]
 
-  const summary = [
-    { label: "Age", value: `${patient.age} yrs` },
-    { label: "Patient ID", value: patient.id, mono: true },
-    { label: "Gestation", value: ga(patient.gaWeeks, patient.gaDays) },
-    { label: "Due date", value: formatDate(patient.dueDate) },
-    { label: "Gravida / Para", value: `G${patient.gravida} P${patient.para}` },
-    { label: "Blood type", value: patient.bloodType },
-  ]
+    const summary = [
+      { label: "سن", value: `${toFaNumber(patient.age)} سال` },
+      { label: "شناسه بیمار", value: patient.id, mono: true, ltr: true },
+      { label: "سن بارداری", value: ga(patient.gaWeeks, patient.gaDays) },
+      { label: "تاریخ زایمان", value: formatDate(patient.dueDate) },
+      {
+        label: "بارداری / زایمان",
+        value: `بارداری ${toFaNumber(patient.gravida)} / زایمان ${toFaNumber(patient.para)}`,
+      },
+      { label: "گروه خونی", value: patient.bloodType, ltr: true },
+    ]
 
   return (
     <div>
@@ -52,7 +62,7 @@ export function PatientRecord({
             className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="size-4" aria-hidden="true" />
-            Back to patients
+            بازگشت به بیماران
           </button>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -64,7 +74,7 @@ export function PatientRecord({
                   {patient.name}
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  Next appointment {formatDate(patient.nextAppointment)}
+                نوبت بعدی {formatDate(patient.nextAppointment)}
                 </p>
               </div>
             </div>
@@ -76,7 +86,7 @@ export function PatientRecord({
               />
               <Button size="lg" onClick={() => setDialogOpen(true)}>
                 <Plus className="size-4" aria-hidden="true" />
-                New visit
+                ویزیت جدید
               </Button>
             </div>
           </div>
@@ -91,7 +101,7 @@ export function PatientRecord({
                     s.mono && "font-mono",
                   )}
                 >
-                  {s.value}
+                  <span dir={s.ltr ? "ltr" : "rtl"}>{s.value}</span>
                 </dd>
               </div>
             ))}
@@ -100,9 +110,9 @@ export function PatientRecord({
       </header>
 
       <div className="mx-auto max-w-7xl px-6 py-6">
-        {/* Visit timeline */}
+        {/* خط زمانی ویزیت ها */}
         <div className="mb-6">
-          <h2 className="mb-3 text-sm font-semibold text-foreground">Visit timeline</h2>
+          <h2 className="mb-3 text-sm font-semibold text-foreground">خط زمانی ویزیت ها</h2>
           <div className="flex items-stretch gap-2 overflow-x-auto pb-2">
             {patient.visits.map((visit, i) => {
               const active = visit.id === activeVisit.id
@@ -126,7 +136,7 @@ export function PatientRecord({
                           active ? "text-primary" : "text-muted-foreground",
                         )}
                       >
-                        Visit {visit.number}
+                        ویزیت {toFaNumber(visit.number)}
                       </span>
                       <RiskBadge level={visit.risk} withDot={false} label={visit.risk} />
                     </div>

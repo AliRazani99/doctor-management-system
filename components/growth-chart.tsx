@@ -42,7 +42,7 @@ export function GrowthChart({
             tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
             stroke="var(--border)"
             label={{
-              value: "Gestational week",
+              value: "هفته بارداری",
               position: "insideBottom",
               offset: -2,
               fill: "var(--muted-foreground)",
@@ -69,7 +69,7 @@ export function GrowthChart({
               fontSize: 12,
               color: "var(--card-foreground)",
             }}
-            labelFormatter={(w) => `Week ${w}`}
+            labelFormatter={(w) => `هفته ${w}`}
             formatter={(val, name) => [`${Math.round(Number(val))} ${meta.unit}`, name]}
           />
           <Line

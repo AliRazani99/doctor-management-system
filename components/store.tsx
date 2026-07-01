@@ -15,8 +15,8 @@ import type { Doctor, Patient, Visit } from "@/lib/types"
 /* Persistence helpers                                                        */
 /* -------------------------------------------------------------------------- */
 
-const STORAGE_KEY = "astraia-store-v1"
-const SESSION_KEY = "astraia-session-v1"
+const STORAGE_KEY = "fandogh-store-v2"
+const SESSION_KEY = "fandogh-session-v2"
 
 interface PersistShape {
   doctors: Doctor[]

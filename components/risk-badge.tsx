@@ -8,9 +8,9 @@ const STYLES: Record<RiskLevel, string> = {
 }
 
 const LABELS: Record<RiskLevel, string> = {
-  low: "Low risk",
-  medium: "Medium risk",
-  high: "High risk",
+  low: "کم‌خطر",
+  medium: "ریسک متوسط",
+  high: "پرخطر",
 }
 
 export function RiskBadge({
@@ -27,17 +27,12 @@ export function RiskBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
+        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
         STYLES[level],
         className,
       )}
     >
-      {withDot && (
-        <span
-          className="size-1.5 rounded-full bg-current"
-          aria-hidden="true"
-        />
-      )}
+      {withDot && <span className="size-1.5 rounded-full bg-current" />}
       {label ?? LABELS[level]}
     </span>
   )

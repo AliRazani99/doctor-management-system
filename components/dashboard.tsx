@@ -2,7 +2,7 @@
 
 import { Baby, CalendarClock, ChevronRight, TriangleAlert, Users } from "lucide-react"
 import type { Patient } from "@/lib/types"
-import { formatDate, ga } from "@/lib/format"
+import { formatDate, ga, toFaNumber } from "@/lib/format"
 import { Card, CardContent } from "@/components/ui/card"
 import { RiskBadge } from "./risk-badge"
 import { PageHeader } from "./page-header"
@@ -20,23 +20,23 @@ export function Dashboard({ onOpenPatient }: { onOpenPatient: (id: string) => vo
     .sort((a, b) => (a.nextAppointment < b.nextAppointment ? -1 : 1))
     .slice(0, 1)[0]
 
-  const stats = [
-    { label: "Active patients", value: String(total), icon: Users },
-    { label: "Visits in July", value: String(visitsThisMonth), icon: Baby },
-    { label: "High-risk", value: String(highRisk), icon: TriangleAlert },
-    {
-      label: "Next appointment",
-      value: formatDate(upcoming.nextAppointment),
-      icon: CalendarClock,
-      small: true,
-    },
-  ]
+    const stats = [
+      { label: "بیماران فعال", value: toFaNumber(total), icon: Users },
+      { label: "ویزیت‌های این ماه", value: toFaNumber(visitsThisMonth), icon: Baby },
+      { label: "بیماران پرخطر", value: toFaNumber(highRisk), icon: TriangleAlert },
+      {
+        label: "نوبت بعدی",
+        value: formatDate(upcoming.nextAppointment),
+        icon: CalendarClock,
+        small: true,
+      },
+    ]
 
   return (
     <div>
       <PageHeader
-        title="Dashboard"
-        subtitle="Overview of your antenatal caseload and upcoming visits"
+        title="داشبورد"
+        subtitle="نمای کلی بیماران و ویزیت‌های پیش‌رو"
       />
       <div className="mx-auto max-w-7xl space-y-6 px-6 py-6">
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -82,20 +82,20 @@ export function PatientTable({
   return (
     <Card className="overflow-hidden">
       <div className="border-b border-border px-5 py-4">
-        <h2 className="text-sm font-semibold text-foreground">Patient list</h2>
+        <h2 className="text-sm font-semibold text-foreground">فهرست بیماران</h2>
         <p className="text-sm text-muted-foreground">
-          {PATIENTS.length} patients under active surveillance
+          {PATIENTS.length} بیمار تحت پایش فعال
         </p>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              <th className="px-5 py-3 font-medium">Patient</th>
-              <th className="px-5 py-3 font-medium">ID</th>
-              <th className="px-5 py-3 font-medium">Gestation</th>
-              <th className="px-5 py-3 font-medium">Risk</th>
-              <th className="px-5 py-3 font-medium">Next appointment</th>
+              <th className="px-5 py-3 font-medium">بیمار</th>
+              <th className="px-5 py-3 font-medium">شناسه</th>
+              <th className="px-5 py-3 font-medium">سن بارداری</th>
+              <th className="px-5 py-3 font-medium">ریسک</th>
+              <th className="px-5 py-3 font-medium">نوبت بعدی</th>
               <th className="px-5 py-3" />
             </tr>
           </thead>
@@ -120,7 +120,7 @@ export function PatientTable({
                     </span>
                     <div className="leading-tight">
                       <p className="font-medium text-foreground">{p.name}</p>
-                      <p className="text-xs text-muted-foreground">{p.age} yrs</p>
+                      <p className="text-xs text-muted-foreground">{toFaNumber(p.age)} سال</p>
                     </div>
                   </div>
                 </td>

@@ -1,51 +1,51 @@
 import type { BiometricKey, Doctor, Patient } from "./types"
 
 /* -------------------------------------------------------------------------- */
-/* Doctors / users                                                            */
+/* پزشکان / کاربران                                                           */
 /* -------------------------------------------------------------------------- */
 
-// Demo-only accounts. Passwords are stored in plain text purely for this
-// client-side demonstration and must never be used in a real application.
+// حساب‌های نمایشی. رمزها فقط برای نسخه دمو به صورت ساده ذخیره شده‌اند
+// و در پروژه واقعی نباید به این شکل استفاده شوند.
 export const DOCTORS: Doctor[] = [
   {
     id: "D-001",
-    name: "Dr. M. Reyes",
-    specialty: "Maternal-Fetal Medicine",
-    email: "admin@astraia.demo",
+    name: "دکتر محمد علایی",
+    specialty: "زنان و زایمان",
+    email: "admin@fandogh.demo",
     password: "admin123",
     role: "admin",
   },
   {
     id: "D-002",
-    name: "Dr. Amelia Chen",
-    specialty: "Obstetric Ultrasound",
-    email: "chen@astraia.demo",
+    name: "دکتر هومان شاهچراغی",
+    specialty: "سونوگرافی زنان و بارداری",
+    email: "chen@fandogh.demo",
     password: "doctor123",
     role: "doctor",
   },
   {
     id: "D-003",
-    name: "Dr. Omar Haddad",
-    specialty: "Fetal Cardiology",
-    email: "haddad@astraia.demo",
+    name: "دکتر صادقی",
+    specialty: "قلب جنین",
+    email: "haddad@fandogh.demo",
     password: "doctor123",
     role: "doctor",
   },
   {
     id: "D-004",
-    name: "Dr. Lena Novak",
-    specialty: "High-Risk Obstetrics",
-    email: "novak@astraia.demo",
+    name: "دکتر نوری",
+    specialty: "بارداری پرخطر",
+    email: "novak@fandogh.demo",
     password: "doctor123",
     role: "doctor",
   },
 ]
 
 /* -------------------------------------------------------------------------- */
-/* Growth reference curves                                                    */
+/* منحنی‌های مرجع رشد                                                         */
 /* -------------------------------------------------------------------------- */
 
-// Approximate median (p50) reference values by gestational week.
+// مقادیر تقریبی میانه p50 بر اساس هفته بارداری
 const REFERENCE: Record<BiometricKey, Record<number, number>> = {
   hc: { 12: 70, 16: 124, 20: 175, 24: 219, 28: 262, 32: 295, 36: 322, 40: 345 },
   ac: { 12: 56, 16: 105, 20: 152, 24: 197, 28: 241, 32: 285, 36: 322, 40: 352 },
@@ -57,26 +57,30 @@ export const BIOMETRIC_META: Record<
   BiometricKey,
   { label: string; short: string; unit: string }
 > = {
-  hc: { label: "Head circumference", short: "HC", unit: "mm" },
-  ac: { label: "Abdominal circumference", short: "AC", unit: "mm" },
-  fl: { label: "Femur length", short: "FL", unit: "mm" },
-  efw: { label: "Estimated fetal weight", short: "EFW", unit: "g" },
+  hc: { label: "دور سر جنین", short: "HC", unit: "میلی‌متر" },
+  ac: { label: "دور شکم جنین", short: "AC", unit: "میلی‌متر" },
+  fl: { label: "طول استخوان ران", short: "FL", unit: "میلی‌متر" },
+  efw: { label: "وزن تخمینی جنین", short: "EFW", unit: "گرم" },
 }
 
 function interp(map: Record<number, number>, week: number): number {
   const weeks = Object.keys(map)
     .map(Number)
     .sort((a, b) => a - b)
+
   if (week <= weeks[0]) return map[weeks[0]]
   if (week >= weeks[weeks.length - 1]) return map[weeks[weeks.length - 1]]
+
   for (let i = 0; i < weeks.length - 1; i++) {
     const lo = weeks[i]
     const hi = weeks[i + 1]
+
     if (week >= lo && week <= hi) {
       const t = (week - lo) / (hi - lo)
       return map[lo] + t * (map[hi] - map[lo])
     }
   }
+
   return map[weeks[weeks.length - 1]]
 }
 
@@ -92,8 +96,7 @@ export interface CurvePoint {
   measured?: number
 }
 
-/** Build a p5/p50/p95 curve across weeks 12-40 for a metric, plotting the
- * patient's measured value at their gestational week. */
+// ساخت نقاط منحنی p5 / p50 / p95 برای هفته‌های ۱۲ تا ۴۰
 export function buildGrowthCurve(
   metric: BiometricKey,
   measuredWeek: number,
@@ -101,8 +104,10 @@ export function buildGrowthCurve(
 ): CurvePoint[] {
   const points: CurvePoint[] = []
   const spread = metric === "efw" ? 0.18 : 0.1
+
   for (let w = 12; w <= 40; w += 2) {
     const p50 = referenceMedian(metric, w)
+
     points.push({
       week: w,
       p5: Math.round(p50 * (1 - spread)),
@@ -110,12 +115,14 @@ export function buildGrowthCurve(
       p95: Math.round(p50 * (1 + spread)),
     })
   }
-  // Insert the measured point at the exact gestational week.
+
   const existing = points.find((p) => p.week === measuredWeek)
+
   if (existing) {
     existing.measured = measuredValue
   } else {
     const p50 = referenceMedian(metric, measuredWeek)
+
     points.push({
       week: measuredWeek,
       p5: Math.round(p50 * (1 - spread)),
@@ -123,13 +130,15 @@ export function buildGrowthCurve(
       p95: Math.round(p50 * (1 + spread)),
       measured: measuredValue,
     })
+
     points.sort((a, b) => a.week - b.week)
   }
+
   return points
 }
 
 /* -------------------------------------------------------------------------- */
-/* First-trimester risk module                                                */
+/* ماژول ریسک سه‌ماهه اول بارداری                                             */
 /* -------------------------------------------------------------------------- */
 
 export interface NtRiskResult {
@@ -139,11 +148,12 @@ export interface NtRiskResult {
   risk: "low" | "medium" | "high"
 }
 
-/** Simplified, non-clinical NT risk model for demonstration only. */
+// مدل ساده‌شده و غیرتشخیصی برای نسخه نمایشی
 export function calculateNtRisk(ntMm: number, age: number): NtRiskResult {
   const ntFactor = Math.max(0, ntMm - 2.5)
   const ageFactor = Math.max(0, age - 30) * 0.04
   const base21 = 1 / (700 - age * 8)
+
   let t21 = base21 * (1 + ntFactor * 9 + ageFactor)
   let t18 = t21 * 0.32 * (1 + ntFactor * 1.4)
   let t13 = t21 * 0.18 * (1 + ntFactor * 1.2)
@@ -159,30 +169,33 @@ export function calculateNtRisk(ntMm: number, age: number): NtRiskResult {
 }
 
 export function formatRiskRatio(p: number): string {
-  if (p <= 0) return "1 : >10000"
+  if (p <= 0) return "کمتر از ۱ در ۱۰٬۰۰۰"
+
   const denom = Math.round(1 / p)
-  return `1 : ${denom.toLocaleString("en-US")}`
+
+  return `۱ در ${denom.toLocaleString("fa-IR")}`
 }
 
 /* -------------------------------------------------------------------------- */
-/* Ultrasound image pool (one distinct image per gestational stage)           */
+/* تصاویر سونوگرافی                                                           */
 /* -------------------------------------------------------------------------- */
 
 function scanFor(week: number): string {
   if (week <= 14) return "/ultrasounds/scan-12w.png"
   if (week <= 22) return "/ultrasounds/scan-20w.png"
   if (week <= 30) return "/ultrasounds/scan-28w.png"
+
   return "/ultrasounds/scan-34w.png"
 }
 
 /* -------------------------------------------------------------------------- */
-/* Patients                                                                   */
+/* بیماران                                                                     */
 /* -------------------------------------------------------------------------- */
 
 export const PATIENTS: Patient[] = [
   {
     id: "P-10428",
-    name: "Amara Okafor",
+    name: "زهره عظیمی فر",
     age: 31,
     dueDate: "2026-09-14",
     gaWeeks: 28,
@@ -207,11 +220,13 @@ export const PATIENTS: Patient[] = [
           efw: { value: 15, percentile: 53 },
         },
         doppler: [
-          { label: "Uterine artery PI", value: "1.42", status: "low" },
-          { label: "Ductus venosus", value: "Normal a-wave", status: "low" },
+          { label: "شاخص PI شریان رحمی", value: "1.42", status: "low" },
+          { label: "داکتوس ونوسوس", value: "موج a طبیعی", status: "low" },
         ],
-        note: "First-trimester combined screening performed. Nuchal translucency within normal limits. Nasal bone present. Patient reports mild nausea, otherwise well.",
-        conclusion: "Low-risk first-trimester screen. Continue routine antenatal care.",
+        note:
+          "غربالگری ترکیبی سه‌ماهه اول انجام شد. ضخامت NT در محدوده طبیعی است. استخوان بینی دیده شد. بیمار تهوع خفیف دارد و در سایر موارد وضعیت عمومی مناسب است.",
+        conclusion:
+          "غربالگری سه‌ماهه اول کم‌خطر است. ادامه مراقبت معمول بارداری توصیه می‌شود.",
         risk: "low",
         ntValue: 1.6,
       },
@@ -229,11 +244,13 @@ export const PATIENTS: Patient[] = [
           efw: { value: 312, percentile: 54 },
         },
         doppler: [
-          { label: "Umbilical artery PI", value: "1.18", status: "low" },
-          { label: "Uterine artery PI", value: "0.98", status: "low" },
+          { label: "شاخص PI شریان بند ناف", value: "1.18", status: "low" },
+          { label: "شاخص PI شریان رحمی", value: "0.98", status: "low" },
         ],
-        note: "Detailed anatomy survey completed. All structures visualised and appear normal. Placenta posterior, clear of os. Amniotic fluid normal.",
-        conclusion: "Normal mid-trimester anatomy scan. No concerns.",
+        note:
+          "بررسی کامل آناتومی انجام شد. ساختارهای قابل مشاهده طبیعی هستند. جفت در موقعیت خلفی قرار دارد و از دهانه رحم فاصله مناسب دارد. مایع آمنیوتیک طبیعی است.",
+        conclusion:
+          "اسکن آناتومی میانه بارداری طبیعی است و نگرانی خاصی مشاهده نشد.",
         risk: "low",
       },
       {
@@ -250,18 +267,20 @@ export const PATIENTS: Patient[] = [
           efw: { value: 1120, percentile: 51 },
         },
         doppler: [
-          { label: "Umbilical artery PI", value: "1.02", status: "low" },
-          { label: "MCA PI", value: "1.85", status: "low" },
+          { label: "شاخص PI شریان بند ناف", value: "1.02", status: "low" },
+          { label: "شاخص PI شریان مغزی میانی", value: "1.85", status: "low" },
         ],
-        note: "Growth tracking along the 50th centile. Fetal movements reported as normal. No signs of pre-eclampsia. BP 118/74.",
-        conclusion: "Appropriately grown fetus, normal Dopplers. Routine follow-up in 6 weeks.",
+        note:
+          "رشد جنین در حدود صدک ۵۰ دنبال می‌شود. حرکات جنین طبق گزارش بیمار طبیعی است. علامتی به نفع پره‌اکلامپسی مشاهده نشد. فشار خون 118/74 ثبت شد.",
+        conclusion:
+          "رشد جنین مناسب است و داپلرها طبیعی هستند. پیگیری معمول طی ۶ هفته آینده انجام شود.",
         risk: "low",
       },
     ],
   },
   {
     id: "P-10591",
-    name: "Sofia Marchetti",
+    name: "حمیرا وفایی",
     age: 38,
     dueDate: "2026-08-02",
     gaWeeks: 33,
@@ -286,11 +305,13 @@ export const PATIENTS: Patient[] = [
           efw: { value: 16, percentile: 60 },
         },
         doppler: [
-          { label: "Uterine artery PI", value: "2.10", status: "medium" },
-          { label: "Ductus venosus", value: "Normal a-wave", status: "low" },
+          { label: "شاخص PI شریان رحمی", value: "2.10", status: "medium" },
+          { label: "داکتوس ونوسوس", value: "موج a طبیعی", status: "low" },
         ],
-        note: "Advanced maternal age (38). Increased nuchal translucency measured. Combined screening returned intermediate risk for trisomy 21. NIPT offered and accepted.",
-        conclusion: "Intermediate first-trimester risk. Awaiting cfDNA results.",
+        note:
+          "سن مادر ۳۸ سال است. ضخامت NT افزایش‌یافته اندازه‌گیری شد. غربالگری ترکیبی، ریسک متوسط برای تریزومی ۲۱ نشان داد. تست NIPT پیشنهاد و توسط بیمار پذیرفته شد.",
+        conclusion:
+          "ریسک سه‌ماهه اول در محدوده متوسط است. نتیجه cfDNA در انتظار بررسی است.",
         risk: "medium",
         ntValue: 3.1,
       },
@@ -308,11 +329,13 @@ export const PATIENTS: Patient[] = [
           efw: { value: 460, percentile: 41 },
         },
         doppler: [
-          { label: "Uterine artery PI", value: "1.95", status: "medium" },
-          { label: "Umbilical artery PI", value: "1.30", status: "low" },
+          { label: "شاخص PI شریان رحمی", value: "1.95", status: "medium" },
+          { label: "شاخص PI شریان بند ناف", value: "1.30", status: "low" },
         ],
-        note: "Anatomy scan normal. Persistent bilateral uterine artery notching with elevated PI. Started on low-dose aspirin for pre-eclampsia prophylaxis.",
-        conclusion: "Elevated uterine artery Dopplers — increased risk of pre-eclampsia / FGR. Serial growth surveillance arranged.",
+        note:
+          "اسکن آناتومی طبیعی است. ناچ دوطرفه شریان رحمی همراه با PI بالا همچنان دیده می‌شود. آسپرین با دوز پایین برای پیشگیری از پره‌اکلامپسی شروع شد.",
+        conclusion:
+          "داپلر شریان رحمی افزایش‌یافته است و ریسک پره‌اکلامپسی یا محدودیت رشد جنین بیشتر است. پایش سریالی رشد برنامه‌ریزی شد.",
         risk: "medium",
       },
       {
@@ -329,11 +352,13 @@ export const PATIENTS: Patient[] = [
           efw: { value: 905, percentile: 11 },
         },
         doppler: [
-          { label: "Umbilical artery PI", value: "1.62", status: "medium" },
-          { label: "MCA PI", value: "1.40", status: "medium" },
+          { label: "شاخص PI شریان بند ناف", value: "1.62", status: "medium" },
+          { label: "شاخص PI شریان مغزی میانی", value: "1.40", status: "medium" },
         ],
-        note: "Abdominal circumference falling below the 10th centile. Asymmetric growth restriction pattern. CPR borderline. Increased surveillance to twice weekly.",
-        conclusion: "Early fetal growth restriction. Twice-weekly Doppler and growth in 2 weeks.",
+        note:
+          "دور شکم جنین به زیر صدک ۱۰ کاهش یافته است. الگوی محدودیت رشد نامتقارن دیده می‌شود. نسبت CPR در محدوده مرزی است. پایش بیمار به دو بار در هفته افزایش یافت.",
+        conclusion:
+          "محدودیت رشد زودرس جنین مطرح است. داپلر دو بار در هفته و بررسی رشد طی ۲ هفته آینده انجام شود.",
         risk: "high",
       },
       {
@@ -350,19 +375,21 @@ export const PATIENTS: Patient[] = [
           efw: { value: 1580, percentile: 7 },
         },
         doppler: [
-          { label: "Umbilical artery PI", value: "1.88", status: "high" },
-          { label: "MCA PI", value: "1.10", status: "high" },
-          { label: "Cerebroplacental ratio", value: "0.59", status: "high" },
+          { label: "شاخص PI شریان بند ناف", value: "1.88", status: "high" },
+          { label: "شاخص PI شریان مغزی میانی", value: "1.10", status: "high" },
+          { label: "نسبت مغزی-جفتی", value: "0.59", status: "high" },
         ],
-        note: "Progressive FGR with brain-sparing (low CPR). Abnormal umbilical and middle cerebral artery Dopplers. Discussed with MFM team. Plan for antenatal corticosteroids and admission for monitoring.",
-        conclusion: "Severe early-onset FGR with abnormal Dopplers. Admit for steroids and consider delivery timing with MFM.",
+        note:
+          "محدودیت رشد جنین پیش‌رونده است و الگوی brain-sparing دیده می‌شود. داپلر شریان بند ناف و شریان مغزی میانی غیرطبیعی است. بیمار با تیم طب مادر و جنین مطرح شد. بستری برای پایش و دریافت کورتیکواستروئید پیش از زایمان برنامه‌ریزی شد.",
+        conclusion:
+          "محدودیت رشد شدید و زودرس جنین همراه با داپلر غیرطبیعی وجود دارد. بستری، دریافت استروئید و تصمیم‌گیری درباره زمان زایمان با تیم تخصصی انجام شود.",
         risk: "high",
       },
     ],
   },
   {
     id: "P-10733",
-    name: "Priya Nair",
+    name: "زهرا سیدی",
     age: 27,
     dueDate: "2026-10-30",
     gaWeeks: 18,
@@ -386,9 +413,10 @@ export const PATIENTS: Patient[] = [
           fl: { value: 9, percentile: 61 },
           efw: { value: 16, percentile: 58 },
         },
-        doppler: [{ label: "Ductus venosus", value: "Normal a-wave", status: "low" }],
-        note: "First pregnancy. Dating confirmed. Nuchal translucency normal, nasal bone present. Reassured patient regarding low screening risk.",
-        conclusion: "Low-risk first-trimester screen.",
+        doppler: [{ label: "داکتوس ونوسوس", value: "موج a طبیعی", status: "low" }],
+        note:
+          "بارداری اول بیمار است. سن بارداری تأیید شد. ضخامت NT طبیعی است و استخوان بینی دیده شد. درباره ریسک پایین غربالگری به بیمار توضیح داده شد.",
+        conclusion: "غربالگری سه‌ماهه اول کم‌خطر است.",
         risk: "low",
         ntValue: 1.4,
       },
@@ -405,16 +433,18 @@ export const PATIENTS: Patient[] = [
           fl: { value: 28, percentile: 59 },
           efw: { value: 240, percentile: 57 },
         },
-        doppler: [{ label: "Umbilical artery PI", value: "1.22", status: "low" }],
-        note: "Early growth scan ahead of anatomy survey. Fetus active, growth on track. Anatomy survey scheduled for 20 weeks.",
-        conclusion: "Normal interval growth. Proceed to anatomy scan.",
+        doppler: [{ label: "شاخص PI شریان بند ناف", value: "1.22", status: "low" }],
+        note:
+          "اسکن رشد زودتر از بررسی کامل آناتومی انجام شد. جنین فعال است و رشد در مسیر مناسب قرار دارد. اسکن آناتومی برای هفته ۲۰ برنامه‌ریزی شده است.",
+        conclusion:
+          "رشد فاصله‌ای طبیعی است. اسکن آناتومی طبق برنامه انجام شود.",
         risk: "low",
       },
     ],
   },
   {
     id: "P-10866",
-    name: "Hannah Bergström",
+    name: "مونا صاحبی",
     age: 34,
     dueDate: "2026-07-19",
     gaWeeks: 35,
@@ -438,9 +468,11 @@ export const PATIENTS: Patient[] = [
           fl: { value: 11, percentile: 65 },
           efw: { value: 23, percentile: 64 },
         },
-        doppler: [{ label: "Uterine artery PI", value: "1.55", status: "low" }],
-        note: "Screening normal. History of gestational diabetes in previous pregnancy noted. Early GTT arranged.",
-        conclusion: "Low-risk screen. Monitor for recurrent GDM.",
+        doppler: [{ label: "شاخص PI شریان رحمی", value: "1.55", status: "low" }],
+        note:
+          "غربالگری طبیعی است. سابقه دیابت بارداری در بارداری قبلی ذکر شد. تست تحمل گلوکز زودهنگام برنامه‌ریزی شد.",
+        conclusion:
+          "غربالگری کم‌خطر است. از نظر عود دیابت بارداری پایش شود.",
         risk: "low",
         ntValue: 1.8,
       },
@@ -457,9 +489,11 @@ export const PATIENTS: Patient[] = [
           fl: { value: 55, percentile: 66 },
           efw: { value: 1290, percentile: 78 },
         },
-        doppler: [{ label: "Umbilical artery PI", value: "0.95", status: "low" }],
-        note: "GTT confirmed gestational diabetes. AC trending toward the upper centiles. Commenced on metformin and dietary advice. Growth surveillance every 3-4 weeks.",
-        conclusion: "GDM with AC on upper centiles. Monitor for macrosomia.",
+        doppler: [{ label: "شاخص PI شریان بند ناف", value: "0.95", status: "low" }],
+        note:
+          "تست تحمل گلوکز، دیابت بارداری را تأیید کرد. دور شکم جنین به سمت صدک‌های بالاتر در حال حرکت است. متفورمین و توصیه‌های تغذیه‌ای شروع شد. پایش رشد هر ۳ تا ۴ هفته انجام شود.",
+        conclusion:
+          "دیابت بارداری همراه با دور شکم در صدک‌های بالا وجود دارد. از نظر ماکروزومی پایش شود.",
         risk: "medium",
       },
       {
@@ -475,16 +509,18 @@ export const PATIENTS: Patient[] = [
           fl: { value: 70, percentile: 74 },
           efw: { value: 2740, percentile: 88 },
         },
-        doppler: [{ label: "Umbilical artery PI", value: "0.88", status: "low" }],
-        note: "EFW on the 88th centile with abdominal circumference > 90th. Polyhydramnios mild (DVP 7.8 cm). Glycaemic control reviewed with diabetes team.",
-        conclusion: "Large-for-dates with mild polyhydramnios secondary to GDM. Plan growth scan in 2 weeks, discuss delivery timing.",
+        doppler: [{ label: "شاخص PI شریان بند ناف", value: "0.88", status: "low" }],
+        note:
+          "وزن تخمینی جنین در صدک ۸۸ و دور شکم بالاتر از صدک ۹۰ است. پلی‌هیدرآمنیوس خفیف مشاهده شد. کنترل قند خون با تیم دیابت بررسی شد.",
+        conclusion:
+          "جنین درشت‌تر از سن بارداری همراه با پلی‌هیدرآمنیوس خفیف، احتمالاً مرتبط با دیابت بارداری است. اسکن رشد طی ۲ هفته آینده و بررسی زمان زایمان توصیه می‌شود.",
         risk: "medium",
       },
     ],
   },
   {
     id: "P-10977",
-    name: "Leah Thompson",
+    name: "مهدیه طاهری",
     age: 29,
     dueDate: "2026-11-22",
     gaWeeks: 13,
@@ -508,9 +544,11 @@ export const PATIENTS: Patient[] = [
           fl: { value: 12, percentile: 59 },
           efw: { value: 25, percentile: 57 },
         },
-        doppler: [{ label: "Ductus venosus", value: "Normal a-wave", status: "low" }],
-        note: "First-trimester combined screening. Crown-rump length consistent with dates. Nuchal translucency low. Patient is Rh-negative — anti-D plan documented.",
-        conclusion: "Low-risk first-trimester screen. Rh-negative pathway initiated.",
+        doppler: [{ label: "داکتوس ونوسوس", value: "موج a طبیعی", status: "low" }],
+        note:
+          "غربالگری ترکیبی سه‌ماهه اول انجام شد. طول سری-نشیمنگاهی با سن بارداری هماهنگ است. ضخامت NT پایین است. بیمار Rh منفی است و مسیر دریافت آنتی-D ثبت شد.",
+        conclusion:
+          "غربالگری سه‌ماهه اول کم‌خطر است. مسیر مراقبت Rh منفی آغاز شد.",
         risk: "low",
         ntValue: 1.3,
       },
@@ -518,7 +556,7 @@ export const PATIENTS: Patient[] = [
   },
   {
     id: "P-11042",
-    name: "Yuki Tanaka",
+    name: "هما رضایی",
     age: 41,
     dueDate: "2026-08-25",
     gaWeeks: 31,
@@ -542,9 +580,11 @@ export const PATIENTS: Patient[] = [
           fl: { value: 8, percentile: 47 },
           efw: { value: 14, percentile: 48 },
         },
-        doppler: [{ label: "Ductus venosus", value: "Reversed a-wave", status: "high" }],
-        note: "Maternal age 41. Elevated nuchal translucency and reversed a-wave in ductus venosus. High combined risk for trisomy 21. Counselled regarding invasive testing.",
-        conclusion: "High-risk first-trimester screen. CVS offered.",
+        doppler: [{ label: "داکتوس ونوسوس", value: "موج a معکوس", status: "high" }],
+        note:
+          "سن مادر ۴۱ سال است. ضخامت NT افزایش‌یافته و موج a معکوس در داکتوس ونوسوس مشاهده شد. ریسک ترکیبی برای تریزومی ۲۱ بالا گزارش شد. درباره تست تهاجمی با بیمار مشاوره شد.",
+        conclusion:
+          "غربالگری سه‌ماهه اول پرخطر است. نمونه‌برداری CVS به بیمار پیشنهاد شد.",
         risk: "high",
         ntValue: 3.8,
       },
@@ -561,9 +601,11 @@ export const PATIENTS: Patient[] = [
           fl: { value: 34, percentile: 55 },
           efw: { value: 322, percentile: 52 },
         },
-        doppler: [{ label: "Umbilical artery PI", value: "1.15", status: "low" }],
-        note: "CVS returned normal karyotype (46,XX). Anatomy survey normal. Patient greatly reassured. Continue routine surveillance given age.",
-        conclusion: "Normal karyotype and anatomy. Risk downgraded; age-related surveillance only.",
+        doppler: [{ label: "شاخص PI شریان بند ناف", value: "1.15", status: "low" }],
+        note:
+          "نتیجه CVS کاریوتایپ طبیعی 46,XX را نشان داد. اسکن آناتومی طبیعی بود و بیمار اطمینان خاطر پیدا کرد. با توجه به سن مادر، ادامه پایش معمول توصیه شد.",
+        conclusion:
+          "کاریوتایپ و آناتومی طبیعی است. ریسک کاهش یافته و فقط پایش مرتبط با سن مادر ادامه یابد.",
         risk: "medium",
       },
       {
@@ -580,11 +622,13 @@ export const PATIENTS: Patient[] = [
           efw: { value: 1640, percentile: 48 },
         },
         doppler: [
-          { label: "Umbilical artery PI", value: "1.05", status: "low" },
-          { label: "MCA PI", value: "1.78", status: "low" },
+          { label: "شاخص PI شریان بند ناف", value: "1.05", status: "low" },
+          { label: "شاخص PI شریان مغزی میانی", value: "1.78", status: "low" },
         ],
-        note: "Growth appropriate, tracking the 50th centile. Normal Dopplers. Given advanced maternal age, planning induction discussion at 39 weeks.",
-        conclusion: "Appropriately grown, reassuring Dopplers. Plan delivery discussion at term.",
+        note:
+          "رشد جنین مناسب است و در حدود صدک ۵۰ دنبال می‌شود. داپلرها طبیعی هستند. با توجه به سن بالای مادر، درباره القای زایمان در هفته ۳۹ مشاوره انجام خواهد شد.",
+        conclusion:
+          "رشد جنین مناسب و داپلرها اطمینان‌بخش هستند. برنامه‌ریزی زایمان در انتهای بارداری بررسی شود.",
         risk: "medium",
       },
     ],
