@@ -1,4 +1,5 @@
-export type RiskLevel = "پایین" | "متوسط" | "بالا"
+// وضعیت ریسک به صورت کلید داخلی نگهداری می‌شود و برچسب فارسی جداگانه نمایش داده می‌شود.
+export type RiskLevel = "low" | "medium" | "high"
 
 export type BiometricKey = "hc" | "ac" | "fl" | "efw"
 
@@ -13,6 +14,16 @@ export interface DopplerFinding {
   label: string
   value: string
   status: RiskLevel
+}
+
+/* -------------------------------------------------------------------------- */
+/* بیمارستان‌ها                                                                */
+/* -------------------------------------------------------------------------- */
+
+export interface Hospital {
+  id: string
+  name: string
+  city: string
 }
 
 export interface Visit {
@@ -33,9 +44,17 @@ export interface Visit {
   /** Doctor who recorded this visit */
   doctorId?: string
   doctorName?: string
+  /** Hospital where this specific visit took place (may differ from where the patient was registered) */
+  hospitalId?: string
+  /** Clinical diagnosis recorded during the visit */
+  diagnosis?: string
 }
 
+// نقش‌های دارای حساب و رمز عبور (مدیر/رئیس دپارتمان و پزشک)
 export type UserRole = "admin" | "doctor"
+
+// نقش‌هایی که در صفحه انتخاب نقش قابل انتخاب هستند
+export type SelectableRole = "admin" | "doctor" | "patient"
 
 export interface Doctor {
   id: string
@@ -45,6 +64,8 @@ export interface Doctor {
   /** Demo-only credential stored client-side; not for production use. */
   password: string
   role: UserRole
+  /** Hospitals this clinician belongs to */
+  hospitalIds: string[]
 }
 
 export interface Patient {
@@ -59,5 +80,9 @@ export interface Patient {
   bloodType: string
   gravida: number
   para: number
+  /** Doctor currently responsible for this patient */
+  assignedDoctorId: string
+  /** Hospital where the patient was originally registered */
+  hospitalId: string
   visits: Visit[]
 }

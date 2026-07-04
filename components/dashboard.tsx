@@ -9,7 +9,7 @@ import { PageHeader } from "./page-header"
 import { useStore } from "./store"
 
 export function Dashboard({ onOpenPatient }: { onOpenPatient: (id: string) => void }) {
-  const { patients: PATIENTS } = useStore()
+  const { visiblePatients: PATIENTS, currentUser } = useStore()
   const total = PATIENTS.length
   const highRisk = PATIENTS.filter((p) => p.risk === "high").length
   const visitsThisMonth = PATIENTS.flatMap((p) => p.visits).filter((v) => {
@@ -26,7 +26,7 @@ export function Dashboard({ onOpenPatient }: { onOpenPatient: (id: string) => vo
       { label: "بیماران پرخطر", value: toFaNumber(highRisk), icon: TriangleAlert },
       {
         label: "نوبت بعدی",
-        value: formatDate(upcoming.nextAppointment),
+        value: upcoming ? formatDate(upcoming.nextAppointment) : "—",
         icon: CalendarClock,
         small: true,
       },
@@ -36,7 +36,11 @@ export function Dashboard({ onOpenPatient }: { onOpenPatient: (id: string) => vo
     <div>
       <PageHeader
         title="داشبورد"
-        subtitle="نمای کلی بیماران و ویزیت‌های پیش‌رو"
+        subtitle={
+          currentUser?.role === "admin"
+            ? "نمای کلی همه بیماران و ویزیت‌های پیش‌رو"
+            : "نمای کلی بیماران تحت مراقبت شما"
+        }
       />
       <div className="mx-auto max-w-7xl space-y-6 px-6 py-6">
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

@@ -46,7 +46,7 @@ export function Reports({
 }: {
   onOpenPatient: (id: string) => void
 }) {
-  const { patients } = useStore()
+  const { visiblePatients: patients } = useStore()
   const [risk, setRisk] = useState<RiskLevel | "all">("all")
   const [since, setSince] = useState("")
 
