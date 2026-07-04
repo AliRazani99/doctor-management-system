@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Image from "next/image"
 import { FileText, Save, Stethoscope, UserRound } from "lucide-react"
-import { BIOMETRIC_META, referenceMedian } from "@/lib/data"
+import { BIOMETRIC_META, hospitalName, referenceMedian } from "@/lib/data"
 import type { BiometricKey, Visit } from "@/lib/types"
 import { formatDate, ga, toFaNumber } from "@/lib/format"
 import { cn } from "@/lib/utils"
@@ -37,7 +37,7 @@ export function VisitPanel({
   const [saved, setSaved] = useState(true)
 
   const toast = useToast()
-  const { updateVisitNote } = useStore()
+  const { updateVisitNote, hospitals } = useStore()
 
   function save() {
     updateVisitNote(patientId, visit.id, note)
@@ -58,6 +58,9 @@ export function VisitPanel({
               </h3>
               <p className="text-xs text-muted-foreground">
                 {ga(visit.gaWeeks, visit.gaDays)} · {formatDate(visit.date)}
+                {visit.hospitalId
+                  ? ` · ${hospitalName(visit.hospitalId, hospitals)}`
+                  : ""}
               </p>
             </div>
 
@@ -108,6 +111,11 @@ export function VisitPanel({
               <h3 className="mb-2 text-sm font-semibold text-foreground">
                 جمع‌بندی ویزیت
               </h3>
+              {visit.diagnosis && (
+                <p className="mb-1.5 text-sm font-medium text-foreground">
+                  تشخیص: {visit.diagnosis}
+                </p>
+              )}
               <p className="text-sm leading-relaxed text-foreground">
                 {visit.conclusion}
               </p>
