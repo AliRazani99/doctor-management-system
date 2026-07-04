@@ -10,7 +10,11 @@ import { useStore, type NewVisitInput } from "./store"
 import { useToast } from "./toast"
 
 const METRIC_ORDER: BiometricKey[] = ["hc", "ac", "fl", "efw"]
-const RISKS: RiskLevel[] = ["پایین", "متوسط", "بالا"]
+const RISKS: { id: RiskLevel; label: string }[] = [
+  { id: "low", label: "کم‌خطر" },
+  { id: "medium", label: "ریسک متوسط" },
+  { id: "high", label: "پرخطر" },
+]
 
 /** Rough percentile estimate of a measured value vs the reference median. */
 function estimatePercentile(measured: number, median: number): number {
@@ -30,20 +34,26 @@ export function NewVisitDialog({
   onClose: () => void
   onCreated: (visit: Visit) => void
 }) {
-  const { addVisit, currentUser } = useStore()
+  const { addVisit, currentUser, patients, hospitals } = useStore()
   const toast = useToast()
+
+  const patient = patients.find((p) => p.id === patientId)
 
   const today = new Date().toISOString().slice(0, 10)
   const [gaWeeks, setGaWeeks] = useState("28")
   const [gaDays, setGaDays] = useState("0")
   const [date, setDate] = useState(today)
+  const [hospitalId, setHospitalId] = useState(
+    patient?.hospitalId ?? currentUser?.hospitalIds[0] ?? hospitals[0]?.id ?? "",
+  )
+  const [diagnosis, setDiagnosis] = useState("")
   const [values, setValues] = useState<Record<BiometricKey, string>>({
     hc: "",
     ac: "",
     fl: "",
     efw: "",
   })
-  const [dopplerLabel, setDopplerLabel] = useState("Umbilical artery PI")
+  const [dopplerLabel, setDopplerLabel] = useState("شاخص PI شریان بند ناف")
   const [dopplerValue, setDopplerValue] = useState("")
   const [dopplerStatus, setDopplerStatus] = useState<RiskLevel>("low")
   const [note, setNote] = useState("")
@@ -56,15 +66,19 @@ export function NewVisitDialog({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!date) {
-      setError("Please choose a visit date.")
+      setError("لطفاً تاریخ ویزیت را انتخاب کنید.")
+      return
+    }
+    if (!hospitalId) {
+      setError("لطفاً بیمارستان محل ویزیت را انتخاب کنید.")
       return
     }
     if (METRIC_ORDER.some((k) => !values[k])) {
-      setError("Please enter all four biometric measurements.")
+      setError("لطفاً هر چهار اندازه‌گیری بیومتریک را وارد کنید.")
       return
     }
     if (!note.trim() || !conclusion.trim()) {
-      setError("Note and conclusion are required.")
+      setError("یادداشت و جمع‌بندی الزامی هستند.")
       return
     }
 
@@ -83,6 +97,8 @@ export function NewVisitDialog({
       gaWeeks: week,
       gaDays: Number(gaDays) || 0,
       date,
+      hospitalId,
+      diagnosis: diagnosis.trim(),
       biometrics,
       doppler,
       note: note.trim(),
@@ -92,13 +108,14 @@ export function NewVisitDialog({
 
     const created = addVisit(patientId, input)
     if (created) {
-      toast(`Visit ${created.number} recorded`)
+      toast(`ویزیت ${created.number} ثبت شد`)
       onCreated(created)
     }
   }
 
   return (
     <div
+      dir="rtl"
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-foreground/40 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
@@ -112,16 +129,16 @@ export function NewVisitDialog({
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <div>
             <h2 id="new-visit-title" className="text-base font-semibold text-foreground">
-              New visit
+              ویزیت جدید
             </h2>
             <p className="text-sm text-muted-foreground">
-              Recording as {currentUser?.name}
+              ثبت توسط {currentUser?.name}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label="بستن"
             className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <X className="size-5" aria-hidden="true" />
@@ -131,7 +148,7 @@ export function NewVisitDialog({
         <form onSubmit={handleSubmit} className="space-y-5 p-5">
           {/* Gestation + date */}
           <div className="grid gap-4 sm:grid-cols-3">
-            <Field label="GA weeks">
+            <Field label="سن بارداری (هفته)">
               <input
                 type="number"
                 min={4}
@@ -141,7 +158,7 @@ export function NewVisitDialog({
                 className={inputClass}
               />
             </Field>
-            <Field label="GA days">
+            <Field label="سن بارداری (روز)">
               <input
                 type="number"
                 min={0}
@@ -151,11 +168,37 @@ export function NewVisitDialog({
                 className={inputClass}
               />
             </Field>
-            <Field label="Visit date">
+            <Field label="تاریخ ویزیت">
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
+                dir="ltr"
+                className={cn(inputClass, "text-left")}
+              />
+            </Field>
+          </div>
+
+          {/* Hospital + diagnosis */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="بیمارستان محل ویزیت">
+              <select
+                value={hospitalId}
+                onChange={(e) => setHospitalId(e.target.value)}
+                className={inputClass}
+              >
+                {hospitals.map((h) => (
+                  <option key={h.id} value={h.id}>
+                    {h.name} — {h.city}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="تشخیص">
+              <input
+                value={diagnosis}
+                onChange={(e) => setDiagnosis(e.target.value)}
+                placeholder="مثلاً بارداری کم‌خطر"
                 className={inputClass}
               />
             </Field>
@@ -163,13 +206,15 @@ export function NewVisitDialog({
 
           {/* Biometrics */}
           <div>
-            <h3 className="mb-2 text-sm font-semibold text-foreground">Biometrics</h3>
+            <h3 className="mb-2 text-sm font-semibold text-foreground">
+              اندازه‌گیری‌های بیومتریک
+            </h3>
             <div className="grid gap-4 sm:grid-cols-2">
               {METRIC_ORDER.map((key) => {
                 const meta = BIOMETRIC_META[key]
                 const median = week ? referenceMedian(key, week) : 0
                 return (
-                  <Field key={key} label={`${meta.short} (${meta.unit})`}>
+                  <Field key={key} label={`${meta.short} — ${meta.label} (${meta.unit})`}>
                     <input
                       type="number"
                       step="0.1"
@@ -177,7 +222,7 @@ export function NewVisitDialog({
                       onChange={(e) =>
                         setValues((prev) => ({ ...prev, [key]: e.target.value }))
                       }
-                      placeholder={median ? `≈ ${median} median` : meta.label}
+                      placeholder={median ? `میانه ≈ ${median}` : meta.label}
                       className={inputClass}
                     />
                   </Field>
@@ -189,55 +234,55 @@ export function NewVisitDialog({
           {/* Doppler (optional single finding) */}
           <div>
             <h3 className="mb-2 text-sm font-semibold text-foreground">
-              Doppler finding{" "}
-              <span className="font-normal text-muted-foreground">(optional)</span>
+              یافته داپلر{" "}
+              <span className="font-normal text-muted-foreground">(اختیاری)</span>
             </h3>
             <div className="grid gap-4 sm:grid-cols-3">
-              <Field label="Label">
+              <Field label="عنوان">
                 <input
                   value={dopplerLabel}
                   onChange={(e) => setDopplerLabel(e.target.value)}
                   className={inputClass}
                 />
               </Field>
-              <Field label="Value">
+              <Field label="مقدار">
                 <input
                   value={dopplerValue}
                   onChange={(e) => setDopplerValue(e.target.value)}
-                  placeholder="e.g. 1.12"
+                  placeholder="مثلاً ۱٫۱۲"
                   className={inputClass}
                 />
               </Field>
-              <Field label="Status">
+              <Field label="وضعیت">
                 <RiskPicker value={dopplerStatus} onChange={setDopplerStatus} />
               </Field>
             </div>
           </div>
 
           {/* Note */}
-          <Field label="Doctor's note">
+          <Field label="یادداشت پزشک">
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={4}
-              placeholder="Clinical observations for this visit…"
+              placeholder="مشاهدات بالینی این ویزیت…"
               className={cn(inputClass, "h-auto resize-y py-2 leading-relaxed")}
             />
           </Field>
 
           {/* Conclusion */}
-          <Field label="Conclusion">
+          <Field label="جمع‌بندی و توصیه">
             <textarea
               value={conclusion}
               onChange={(e) => setConclusion(e.target.value)}
               rows={2}
-              placeholder="Summary and plan…"
+              placeholder="خلاصه و برنامه درمانی…"
               className={cn(inputClass, "h-auto resize-y py-2 leading-relaxed")}
             />
           </Field>
 
           {/* Overall risk */}
-          <Field label="Overall risk for this visit">
+          <Field label="سطح ریسک این ویزیت">
             <RiskPicker value={risk} onChange={setRisk} />
           </Field>
 
@@ -249,10 +294,10 @@ export function NewVisitDialog({
 
           <div className="flex justify-end gap-3 border-t border-border pt-4">
             <Button type="button" variant="outline" size="lg" onClick={onClose}>
-              Cancel
+              انصراف
             </Button>
             <Button type="submit" size="lg">
-              Save visit
+              ذخیره ویزیت
             </Button>
           </div>
         </form>
@@ -262,7 +307,7 @@ export function NewVisitDialog({
 }
 
 const inputClass =
-  "h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+  "h-10 w-full rounded-lg border border-input bg-background px-3 text-right text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -284,17 +329,17 @@ function RiskPicker({
     <div className="flex items-center gap-1 rounded-lg border border-border bg-card p-1">
       {RISKS.map((r) => (
         <button
-          key={r}
+          key={r.id}
           type="button"
-          onClick={() => onChange(r)}
+          onClick={() => onChange(r.id)}
           className={cn(
-            "flex-1 rounded-md px-2 py-1.5 text-xs font-medium capitalize transition-colors",
-            value === r
+            "flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
+            value === r.id
               ? "bg-primary text-primary-foreground"
               : "text-muted-foreground hover:text-foreground",
           )}
         >
-          {r}
+          {r.label}
         </button>
       ))}
     </div>

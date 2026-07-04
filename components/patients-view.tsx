@@ -1,14 +1,18 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronRight, Search } from "lucide-react"
+import { Building2, ChevronRight, Pencil, Plus, Search, Stethoscope, Trash2 } from "lucide-react"
+import { doctorName, hospitalName } from "@/lib/data"
 import { formatDate, ga, toFaNumber } from "@/lib/format"
-import type { RiskLevel } from "@/lib/types"
+import type { Patient, RiskLevel } from "@/lib/types"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { RiskBadge } from "./risk-badge"
 import { PageHeader } from "./page-header"
+import { PatientFormDialog } from "./patient-form-dialog"
 import { useStore } from "./store"
+import { useToast } from "./toast"
 
 const FILTERS: { id: RiskLevel | "all"; label: string }[] = [
   { id: "all", label: "همه" },
@@ -31,9 +35,13 @@ export function PatientsView({
 }: {
   onOpenPatient: (id: string) => void
 }) {
-  const { patients: PATIENTS } = useStore()
+  const { visiblePatients: PATIENTS, doctors, hospitals, currentUser, removePatient } =
+    useStore()
+  const toast = useToast()
   const [query, setQuery] = useState("")
   const [risk, setRisk] = useState<RiskLevel | "all">("all")
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editing, setEditing] = useState<Patient | null>(null)
 
   const filtered = PATIENTS.filter((p) => {
     const q = query.trim().toLowerCase()
@@ -46,12 +54,38 @@ export function PatientsView({
     return matchesQuery && matchesRisk
   })
 
+  function handleDelete(p: Patient) {
+    if (
+      window.confirm(
+        `حذف پرونده «${p.name}» (${p.id})؟ این عمل قابل بازگشت نیست.`,
+      )
+    ) {
+      removePatient(p.id)
+      toast(`پرونده ${p.name} حذف شد`)
+    }
+  }
+
   return (
     <div dir="rtl">
       <PageHeader
         title="بیماران"
-        subtitle="جستجو و فیلتر پرونده بیماران ثبت‌شده در سامانه"
-      />
+        subtitle={
+          currentUser?.role === "admin"
+            ? "جستجو و مدیریت پرونده همه بیماران سامانه"
+            : "بیماران تحت مراقبت شما"
+        }
+      >
+        <Button
+          size="lg"
+          onClick={() => {
+            setEditing(null)
+            setDialogOpen(true)
+          }}
+        >
+          <Plus className="size-4" aria-hidden="true" />
+          افزودن بیمار
+        </Button>
+      </PageHeader>
 
       <div className="space-y-6 px-6 py-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -93,16 +127,7 @@ export function PatientsView({
           {filtered.map((p) => (
             <Card
               key={p.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => onOpenPatient(p.id)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault()
-                  onOpenPatient(p.id)
-                }
-              }}
-              className="cursor-pointer p-5 outline-none transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex flex-col p-5 transition-shadow hover:shadow-md"
             >
               <div className="mb-6 flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
@@ -115,7 +140,7 @@ export function PatientsView({
                       {p.name}
                     </h2>
 
-                    <p dir="ltr" className="text-sm text-muted-foreground">
+                    <p dir="ltr" className="text-right text-sm text-muted-foreground">
                       {p.id}
                     </p>
                   </div>
@@ -133,13 +158,6 @@ export function PatientsView({
                 </div>
 
                 <div>
-                  <p className="text-muted-foreground">سن بیمار</p>
-                  <p className="mt-1 font-semibold text-foreground">
-                    {toFaNumber(p.age)} سال
-                  </p>
-                </div>
-
-                <div>
                   <p className="text-muted-foreground">تاریخ زایمان</p>
                   <p className="mt-1 font-semibold text-foreground">
                     {formatDate(p.dueDate)}
@@ -147,22 +165,59 @@ export function PatientsView({
                 </div>
 
                 <div>
-                  <p className="text-muted-foreground">نوبت بعدی</p>
+                  <p className="flex items-center gap-1 text-muted-foreground">
+                    <Building2 className="size-3.5" aria-hidden="true" />
+                    بیمارستان
+                  </p>
                   <p className="mt-1 font-semibold text-foreground">
-                    {formatDate(p.nextAppointment)}
+                    {hospitalName(p.hospitalId, hospitals)}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="flex items-center gap-1 text-muted-foreground">
+                    <Stethoscope className="size-3.5" aria-hidden="true" />
+                    پزشک مسئول
+                  </p>
+                  <p className="mt-1 font-semibold text-foreground">
+                    {doctorName(p.assignedDoctorId, doctors)}
                   </p>
                 </div>
               </div>
 
               <div className="mt-6 flex items-center justify-between border-t border-border pt-4 text-sm">
-                <p className="text-muted-foreground">
-                  {toFaNumber(p.visits.length)} ویزیت ثبت‌شده
-                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditing(p)
+                      setDialogOpen(true)
+                    }}
+                    aria-label={`ویرایش ${p.name}`}
+                    className="flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    <Pencil className="size-3.5" aria-hidden="true" />
+                    ویرایش
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(p)}
+                    aria-label={`حذف ${p.name}`}
+                    className="flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-risk-high hover:text-risk-high-foreground"
+                  >
+                    <Trash2 className="size-3.5" aria-hidden="true" />
+                    حذف
+                  </button>
+                </div>
 
-                <div className="flex items-center gap-1 font-semibold text-primary">
+                <button
+                  type="button"
+                  onClick={() => onOpenPatient(p.id)}
+                  className="flex items-center gap-1 font-semibold text-primary"
+                >
                   مشاهده پرونده
                   <ChevronRight className="size-4 rotate-180" aria-hidden="true" />
-                </div>
+                </button>
               </div>
             </Card>
           ))}
@@ -174,6 +229,17 @@ export function PatientsView({
           )}
         </div>
       </div>
+
+      {dialogOpen && (
+        <PatientFormDialog
+          patient={editing ?? undefined}
+          onClose={() => {
+            setDialogOpen(false)
+            setEditing(null)
+          }}
+          onCreated={(p) => onOpenPatient(p.id)}
+        />
+      )}
     </div>
   )
 }

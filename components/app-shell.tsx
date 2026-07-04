@@ -9,13 +9,15 @@ import { Reports } from "./reports"
 import { SettingsView } from "./settings-view"
 import { AdminView } from "./admin-view"
 import { LoginScreen } from "./login-screen"
+import { PatientPortal } from "./patient-portal"
+import { AlertsBanner } from "./alerts-banner"
 import { ToastProvider } from "./toast"
 import { StoreProvider, useStore } from "./store"
 
 export type View = "dashboard" | "patients" | "reports" | "admin" | "settings"
 
 function Workspace() {
-  const { currentUser, ready } = useStore()
+  const { currentUser, currentPatient, ready } = useStore()
   const [view, setView] = useState<View>("dashboard")
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null)
 
@@ -31,9 +33,14 @@ function Workspace() {
   if (!ready) {
     return (
       <div className="flex h-dvh items-center justify-center bg-background text-sm text-muted-foreground">
-        Loading workspace…
+        در حال بارگذاری سامانه…
       </div>
     )
+  }
+
+  // درگاه بیمار (فقط خواندنی)
+  if (currentPatient) {
+    return <PatientPortal />
   }
 
   if (!currentUser) {
@@ -70,7 +77,10 @@ function Workspace() {
   return (
     <div className="flex h-dvh overflow-hidden bg-background">
       <Sidebar view={activeView} onNavigate={handleNavigate} />
-      <main className="flex-1 overflow-y-auto">{renderContent()}</main>
+      <main className="flex-1 overflow-y-auto">
+        <AlertsBanner onOpenPatient={openPatient} />
+        {renderContent()}
+      </main>
     </div>
   )
 }

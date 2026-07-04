@@ -1,4 +1,15 @@
-import type { BiometricKey, Doctor, Patient } from "./types"
+import type { BiometricKey, Doctor, Hospital, Patient } from "./types"
+
+/* -------------------------------------------------------------------------- */
+/* بیمارستان‌ها                                                                */
+/* -------------------------------------------------------------------------- */
+
+export const HOSPITALS: Hospital[] = [
+  { id: "H-01", name: "بیمارستان زینبیه", city: "شیراز" },
+  { id: "H-02", name: "بیمارستان حافظ", city: "شیراز" },
+  { id: "H-03", name: "بیمارستان نمازی", city: "شیراز" },
+  { id: "H-04", name: "بیمارستان شهید فقیهی", city: "شیراز" },
+]
 
 /* -------------------------------------------------------------------------- */
 /* پزشکان / کاربران                                                           */
@@ -14,6 +25,7 @@ export const DOCTORS: Doctor[] = [
     email: "admin@fandogh.demo",
     password: "admin123",
     role: "admin",
+    hospitalIds: ["H-01", "H-02", "H-03", "H-04"],
   },
   {
     id: "D-002",
@@ -22,6 +34,7 @@ export const DOCTORS: Doctor[] = [
     email: "chen@fandogh.demo",
     password: "doctor123",
     role: "doctor",
+    hospitalIds: ["H-01", "H-02"],
   },
   {
     id: "D-003",
@@ -30,6 +43,7 @@ export const DOCTORS: Doctor[] = [
     email: "haddad@fandogh.demo",
     password: "doctor123",
     role: "doctor",
+    hospitalIds: ["H-03"],
   },
   {
     id: "D-004",
@@ -38,6 +52,7 @@ export const DOCTORS: Doctor[] = [
     email: "novak@fandogh.demo",
     password: "doctor123",
     role: "doctor",
+    hospitalIds: ["H-02", "H-04"],
   },
 ]
 
@@ -205,6 +220,8 @@ export const PATIENTS: Patient[] = [
     bloodType: "O+",
     gravida: 2,
     para: 1,
+    assignedDoctorId: "D-002",
+    hospitalId: "H-01",
     visits: [
       {
         id: "P-10428-V1",
@@ -224,7 +241,7 @@ export const PATIENTS: Patient[] = [
           { label: "داکتوس ونوسوس", value: "موج a طبیعی", status: "low" },
         ],
         note:
-          "غربالگری ترکیبی سه‌ماهه اول انجام شد. ضخامت NT در محدوده طبیعی است. استخوان بینی دیده شد. بیمار تهوع خفیف دارد و در سایر موارد وضعیت عمومی مناسب است.",
+          "غربالگری ترکیبی سه‌ماهه اول انجام شد. ضخامت NT در محدوده طبیعی است. استخوان بینی دیده شد. بیمار تهوع خفیف ��ارد و در سایر موارد وضعیت عمومی مناسب است.",
         conclusion:
           "غربالگری سه‌ماهه اول کم‌خطر است. ادامه مراقبت معمول بارداری توصیه می‌شود.",
         risk: "low",
@@ -290,6 +307,8 @@ export const PATIENTS: Patient[] = [
     bloodType: "A-",
     gravida: 3,
     para: 1,
+    assignedDoctorId: "D-004",
+    hospitalId: "H-02",
     visits: [
       {
         id: "P-10591-V1",
@@ -364,6 +383,8 @@ export const PATIENTS: Patient[] = [
       {
         id: "P-10591-V4",
         number: 4,
+        hospitalId: "H-04",
+        diagnosis: "محدودیت رشد شدید جنین همراه با داپلر غیرطبیعی",
         gaWeeks: 33,
         gaDays: 5,
         date: "2026-07-06",
@@ -399,6 +420,8 @@ export const PATIENTS: Patient[] = [
     bloodType: "B+",
     gravida: 1,
     para: 0,
+    assignedDoctorId: "D-002",
+    hospitalId: "H-01",
     visits: [
       {
         id: "P-10733-V1",
@@ -415,7 +438,7 @@ export const PATIENTS: Patient[] = [
         },
         doppler: [{ label: "داکتوس ونوسوس", value: "موج a طبیعی", status: "low" }],
         note:
-          "بارداری اول بیمار است. سن بارداری تأیید شد. ضخامت NT طبیعی است و استخوان بینی دیده شد. درباره ریسک پایین غربالگری به بیمار توضیح داده شد.",
+          "بارداری اول بیمار است. سن بارداری تأیید شد. ضخامت NT طبیع�� است و استخوان بینی دیده شد. درباره ریسک پایین غربالگری به بیمار توضیح داده شد.",
         conclusion: "غربالگری سه‌ماهه اول کم‌خطر است.",
         risk: "low",
         ntValue: 1.4,
@@ -454,6 +477,8 @@ export const PATIENTS: Patient[] = [
     bloodType: "AB+",
     gravida: 2,
     para: 0,
+    assignedDoctorId: "D-002",
+    hospitalId: "H-02",
     visits: [
       {
         id: "P-10866-V1",
@@ -530,6 +555,8 @@ export const PATIENTS: Patient[] = [
     bloodType: "O-",
     gravida: 1,
     para: 0,
+    assignedDoctorId: "D-003",
+    hospitalId: "H-03",
     visits: [
       {
         id: "P-10977-V1",
@@ -566,6 +593,8 @@ export const PATIENTS: Patient[] = [
     bloodType: "A+",
     gravida: 4,
     para: 2,
+    assignedDoctorId: "D-004",
+    hospitalId: "H-04",
     visits: [
       {
         id: "P-11042-V1",
@@ -637,6 +666,16 @@ export const PATIENTS: Patient[] = [
 
 export function getPatient(id: string): Patient | undefined {
   return PATIENTS.find((p) => p.id === id)
+}
+
+export function hospitalName(id: string | undefined, hospitals: Hospital[] = HOSPITALS): string {
+  if (!id) return "نامشخص"
+  return hospitals.find((h) => h.id === id)?.name ?? "نامشخص"
+}
+
+export function doctorName(id: string | undefined, doctors: Doctor[]): string {
+  if (!id) return "بدون پزشک مسئول"
+  return doctors.find((d) => d.id === id)?.name ?? "بدون پزشک مسئول"
 }
 
 export interface FlatVisit {

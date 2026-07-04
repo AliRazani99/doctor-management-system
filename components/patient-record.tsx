@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { ArrowRight, Plus } from "lucide-react"
 import { formatDate, ga, toFaNumber } from "@/lib/format"
+import { doctorName, hospitalName } from "@/lib/data"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { RiskBadge } from "./risk-badge"
@@ -46,7 +47,7 @@ export function PatientRecord({
   patientId: string
   onBack: () => void
 }) {
-  const { patients } = useStore()
+  const { patients, hospitals, doctors } = useStore()
   const patient = patients.find((p) => p.id === patientId)
 
   const [activeVisitId, setActiveVisitId] = useState(
@@ -87,6 +88,8 @@ export function PatientRecord({
       )}`,
     },
     { label: "گروه خونی", value: patient.bloodType, ltr: true },
+    { label: "بیمارستان", value: hospitalName(patient.hospitalId, hospitals) },
+    { label: "پزشک مسئول", value: doctorName(patient.assignedDoctorId, doctors) },
   ]
 
   return (
